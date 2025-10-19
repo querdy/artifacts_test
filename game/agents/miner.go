@@ -43,6 +43,7 @@ func (ag *MinerAgent) Run(character *state.Character) {
 	log.Printf("[%s] started mining loop", character.Name)
 
 	for {
+		log.Println("loop")
 		select {
 		case <-ag.ctx.Done():
 			log.Printf("[%s] stopped", character.Name)
@@ -56,7 +57,7 @@ func (ag *MinerAgent) Run(character *state.Character) {
 func (ag *MinerAgent) process(character *state.Character) {
 	_ = ag.cooldowns.WaitTo(ag.ctx, character.CooldownExpiration, character.Name)
 	for {
-		if character.GetInventoryFillLevel() > 0.3 {
+		if character.GetInventoryFillLevel() > 0.5 {
 			bank := state.GameStateData.GetNearestMapByContentCode(character.MapId, "bank")
 			if bank.MapID != character.MapId {
 				movementData, err := ag.client.ActionMove(character, bank)

@@ -3,60 +3,25 @@ package agents
 import (
 	"artifacts/client"
 	"artifacts/state"
-	"artifacts/utils"
-	"context"
 	"log"
 )
 
 type WoodcutterAgent struct {
-	client    *client.ArtifactsMMOClient
-	ctx       context.Context
-	cancel    context.CancelFunc
-	cooldowns *utils.CooldownManager
-	running   bool
+	*BaseAgent
 }
 
 func NewWoodcutterAgent(c *client.ArtifactsMMOClient) *WoodcutterAgent {
-	ctx, cancel := context.WithCancel(context.Background())
-	return &WoodcutterAgent{
-		client:    c,
-		ctx:       ctx,
-		cancel:    cancel,
-		cooldowns: utils.NewCooldownManager(),
-	}
-}
-
-func (ag *WoodcutterAgent) Stop() {
-	if !ag.running {
-		return
-	}
-	ag.cancel()
-	ag.running = false
-	log.Printf("[MinerAgent] stopped")
-}
-
-func (ag *WoodcutterAgent) Run(character *state.Character) {
-	if ag.running {
-		return
-	}
-	ag.running = true
-	log.Printf("[%s] started woodcutting loop", character.Name)
-
-	for {
-		select {
-		case <-ag.ctx.Done():
-			log.Printf("[%s] stopped", character.Name)
-			return
-		default:
-			ag.process(character)
-		}
-	}
+	ba := NewBaseAgent(c)
+	ag := &WoodcutterAgent{BaseAgent: NewBaseAgent(c)}
+	ba.processFunc = ag.process
+	return &WoodcutterAgent{BaseAgent: ba}
 }
 
 func (ag *WoodcutterAgent) process(character *state.Character) {
+	log.Printf("[%s] started woodcutting loop", character.Name)
 	_ = ag.cooldowns.WaitTo(ag.ctx, character.CooldownExpiration, character.Name)
 	for {
-		if character.GetInventoryFillLevel() > 0.3 {
+		if character.GetInventoryFillLevel() > 0.5 {
 			bank := state.GameStateData.GetNearestMapByContentCode(character.MapId, "bank")
 			if bank.MapID != character.MapId {
 				movementData, err := ag.client.ActionMove(character, bank)
@@ -75,7 +40,7 @@ func (ag *WoodcutterAgent) process(character *state.Character) {
 		}
 		maxLvlResource := state.Resource{}
 		for i := range state.GameStateData.Resources {
-			if state.GameStateData.Resources[i].Skill == "woodcutting" && state.GameStateData.Resources[i].Level <= character.WoodcuttingLevel {
+			if state.GameStateData.Resources[i].Skill == "woodcutting" && state.GameStateData.Resources[i].Level <= character.WoodcuttingLevel && state.GameStateData.Resources[i].Code != "magic_tree" {
 				if maxLvlResource.Level < state.GameStateData.Resources[i].Level {
 					maxLvlResource = state.GameStateData.Resources[i]
 				}

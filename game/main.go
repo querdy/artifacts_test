@@ -3,42 +3,71 @@ package game
 import (
 	"artifacts/client"
 	"artifacts/state"
-	"fmt"
+	"log"
+	"sync"
 )
 
 const API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InF1ZXJkeTdAZ21haWwuY29tIiwicGFzc3dvcmRfY2hhbmdlZCI6bnVsbH0.-5lNsy4G90w8flV2h-rteKSG2pyjeNuohFdbaKPRR9c"
 const API_URL = "https://api.artifactsmmo.com/"
 
 func GameLoop() {
+	log.Println("Initialize")
 	aMmoClient := client.NewArtifactsMMOClient(API_URL, API_KEY)
-	accountDetails, err := aMmoClient.GetAccountDetails()
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-	state.GameStateData.Account = accountDetails.Data
-	//fmt.Println(utils.Stringify(accountDetails))
-	//printAccountStatus(accountDetails)
-	serverStatus, err := aMmoClient.GetServerStatus()
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-	state.GameStateData.Server = serverStatus.Data
-	//fmt.Println(utils.Stringify(serverStatus))
-	//fmt.Println(utils.Stringify(serverStatus))
 
-	charactersData, err := aMmoClient.GetMyCharacters()
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-	state.GameStateData.Characters = charactersData.Data
-	//fmt.Println(utils.Stringify(charactersData))
+	var wg sync.WaitGroup
+	wg.Add(5)
 
-	maps, err := aMmoClient.GetMaps()
-	state.GameStateData.Maps = maps
-	//fmt.Println(utils.Stringify(maps))
+	go func() {
+		defer wg.Done()
+		accountDetails, err := aMmoClient.GetAccountDetails()
+		if err != nil {
+			log.Println("Error getting account details: ", err)
+			return
+		}
+		state.GameStateData.Account = accountDetails.Data
+	}()
 
-	resources, err := aMmoClient.GetResources()
-	state.GameStateData.Resources = resources
-	//fmt.Println(utils.Stringify(resources))
+	go func() {
+		defer wg.Done()
+		serverStatus, err := aMmoClient.GetServerStatus()
+		if err != nil {
+			log.Println("Error getting server status: ", err)
+			return
+		}
+		state.GameStateData.Server = serverStatus.Data
+	}()
+
+	go func() {
+		defer wg.Done()
+		charactersData, err := aMmoClient.GetMyCharacters()
+		if err != nil {
+			log.Println("Error getting my characters: ", err)
+			return
+		}
+		state.GameStateData.Characters = charactersData.Data
+	}()
+
+	go func() {
+		defer wg.Done()
+		maps, err := aMmoClient.GetMaps()
+		if err != nil {
+			log.Println("Error getting maps: ", err)
+			return
+		}
+		state.GameStateData.Maps = maps
+	}()
+
+	go func() {
+		defer wg.Done()
+		resources, err := aMmoClient.GetResources()
+		if err != nil {
+			log.Println("Error getting resources: ", err)
+			return
+		}
+		state.GameStateData.Resources = resources
+	}()
+
+	wg.Wait()
+	log.Println("End of initialization")
 	go CharactersController(aMmoClient)
 }

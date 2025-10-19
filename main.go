@@ -19,11 +19,3 @@ func main() {
 		}
 	}
 }
-
-//done := make(chan struct{})
-//go func() {
-//	ui.UI()
-//	close(done)
-//}()
-////code
-//<-done
