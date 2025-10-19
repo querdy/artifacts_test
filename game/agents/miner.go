@@ -76,7 +76,7 @@ func (ag *MinerAgent) process(character *state.Character) {
 		}
 		maxLvlResource := state.Resource{}
 		for i := range state.GameStateData.Resources {
-			if state.GameStateData.Resources[i].Skill == "mining" && state.GameStateData.Resources[i].Level <= character.MiningLevel {
+			if state.GameStateData.Resources[i].Skill == "mining" && state.GameStateData.Resources[i].Level <= character.MiningLevel && state.GameStateData.Resources[i].Level != 35 {
 				if maxLvlResource.Level < state.GameStateData.Resources[i].Level {
 					maxLvlResource = state.GameStateData.Resources[i]
 				}
