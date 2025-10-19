@@ -1,6 +1,6 @@
 module artifacts
 
-go 1.25
+go 1.22
 
 require github.com/keaysma/termui/v3 v3.2.0
 
